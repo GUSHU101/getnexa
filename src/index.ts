@@ -17,6 +17,8 @@ type Bindings = PayBindings & {
   GAME_ROOM: DurableObjectNamespace;
   SITE_NAME: string;
   SITE_URL: string;
+  DISCORD_WEBHOOK_URL?: string;
+  TURNSTILE_SECRET_KEY?: string;
 };
 
 type Variables = {

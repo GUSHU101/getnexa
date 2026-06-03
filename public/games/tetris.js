@@ -13,7 +13,7 @@ export function mountTetris(root, { onScore }) {
   root.appendChild(canvas);
   const help = document.createElement('div');
   help.style.cssText = 'text-align:center; margin-top:10px; color:var(--muted); font-size:13px;';
-  help.innerHTML = '← → move · ↑ rotate · ↓ soft drop · Space hard drop · P pause';
+  help.innerHTML = '← → move · ↑ rotate · ↓ soft drop · Space hard drop · P pause<br>Touch: swipe ←/→ to move · tap to rotate · swipe ↓ to drop';
   root.appendChild(help);
 
   const COLORS = ['#000', '#24d1a1', '#5b8cff', '#7c5cff', '#ffb020', '#ff5b6b', '#ff8cf0', '#5af0ea'];
@@ -130,5 +130,41 @@ export function mountTetris(root, { onScore }) {
     e.preventDefault();
   };
   window.addEventListener('keydown', onKey);
+
+  // ── Touch controls: swipe to move/drop, tap to rotate ──
+  let tStartX = 0, tStartY = 0, tStartT = 0, tMoved = false;
+  const STEP = 28; // px per horizontal cell-move
+  let accumX = 0;
+  canvas.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    tStartX = t.clientX; tStartY = t.clientY; tStartT = Date.now(); tMoved = false; accumX = 0;
+  }, { passive: true });
+  canvas.addEventListener('touchmove', (e) => {
+    if (over || paused) return;
+    const t = e.touches[0];
+    const dx = t.clientX - tStartX, dy = t.clientY - tStartY;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) tMoved = true;
+    // Horizontal stepping
+    accumX += dx - (accumX);
+    while (Math.abs(t.clientX - tStartX) >= STEP) {
+      if (t.clientX - tStartX > 0) { if (!collide(piece, px + 1, py)) px++; tStartX += STEP; }
+      else { if (!collide(piece, px - 1, py)) px--; tStartX += -STEP; }
+    }
+    // Downward swipe = soft drop
+    if (dy > STEP) { softDrop(); tStartY = t.clientY; }
+    e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => {
+    if (over) { reset(); return; }
+    if (!tMoved && !paused) { const r = rotate(piece); if (!collide(r, px, py)) piece = r; } // tap = rotate
+  });
+
   reset();
+
+  // Cleanup when the stage is torn down (route change re-renders #app)
+  const cleanup = () => { window.removeEventListener('keydown', onKey); over = true; };
+  const mo = new MutationObserver(() => {
+    if (!document.body.contains(canvas)) { cleanup(); mo.disconnect(); }
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
 }

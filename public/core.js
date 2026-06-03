@@ -224,10 +224,21 @@ function Header() {
 }
 
 function Footer() {
+  const links = [
+    ['/games', 'Games'],
+    ['/about', 'About'],
+    ['/contact', 'Contact'],
+    ['/privacy', 'Privacy'],
+    ['/terms', 'Terms'],
+    ['/cookies', 'Cookies'],
+  ];
   return h('footer', { class: 'site-footer' },
     h('div', { class: 'container', style: 'text-align: center;' },
       h('div', { class: 'brand', style: 'font-size: 40px; margin-bottom: 20px;' }, 'NEXA ARCADE'),
-      h('p', { style: 'color: var(--text-dim); font-size: 14px;' }, '© 2026 The Future of Gaming on Cloudflare.')
+      h('nav', { class: 'footer-links', 'aria-label': 'Footer' },
+        ...links.map(([href, label]) => h('a', { href, 'data-link': true }, label))
+      ),
+      h('p', { style: 'color: var(--text-dim); font-size: 14px; margin-top: 20px;' }, '© 2026 Nexa Arcade. The Future of Gaming on Cloudflare.')
     )
   );
 }
@@ -255,26 +266,35 @@ export function toast(message, type = '') {
   setTimeout(() => t.remove(), 3500);
 }
 
+// Real AdSense publisher ID. Configure per-unit slot IDs via window.NEXA_AD_SLOTS
+// (a { '728x90': '1234567890', ... } map) once units are created in AdSense.
+// Until a real slot ID exists for a unit, we render NOTHING here — Google Auto Ads
+// (loaded globally in index.html) still place ads automatically. We never display a
+// fake "Sponsored" placeholder box, which would violate AdSense policy.
+const AD_CLIENT = 'ca-pub-5800977493749262';
+
 export function AdSlot(size = '728x90', label = 'Advertisement', slotId = '') {
-  // AD-FREE logic for Operative/Pro/Legend tiers
+  // AD-FREE logic for paid tiers
   if (state.user && ['operative', 'pro', 'legend', 'studio'].includes(state.user.tier)) {
     return h('div', { class: 'ad-slot-hidden', style: 'display:none;' });
   }
-  const wrap = h('div', { class: 'ad-slot', 'aria-label': label });
-  if (slotId) {
-    const ins = document.createElement('ins');
-    ins.className = 'adsbygoogle';
-    ins.style.display = 'block';
-    ins.style.width = '100%';
-    ins.setAttribute('data-ad-client', 'ca-pub-5800977493749262');
-    ins.setAttribute('data-ad-slot', slotId);
-    ins.setAttribute('data-ad-format', 'auto');
-    ins.setAttribute('data-full-width-responsive', 'true');
-    wrap.appendChild(ins);
-    queueMicrotask(() => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {} });
-  } else {
-    wrap.appendChild(h('small', { style: 'font-size: 8px; color: var(--text-dim);' }, `${label} (${size})`));
+  // Resolve slot id: explicit arg wins, else look up a configured map by size.
+  const resolved = slotId || (window.NEXA_AD_SLOTS && window.NEXA_AD_SLOTS[size]) || '';
+  if (!resolved) {
+    // No real ad unit configured yet — render nothing (Auto Ads still serve).
+    return h('div', { class: 'ad-slot-hidden', style: 'display:none;' });
   }
+  const wrap = h('div', { class: 'ad-slot', 'aria-label': label });
+  const ins = document.createElement('ins');
+  ins.className = 'adsbygoogle';
+  ins.style.display = 'block';
+  ins.style.width = '100%';
+  ins.setAttribute('data-ad-client', AD_CLIENT);
+  ins.setAttribute('data-ad-slot', resolved);
+  ins.setAttribute('data-ad-format', 'auto');
+  ins.setAttribute('data-full-width-responsive', 'true');
+  wrap.appendChild(ins);
+  queueMicrotask(() => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {} });
   return wrap;
 }
 

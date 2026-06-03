@@ -29,7 +29,7 @@ export function mountPong(root, { onScore, user }) {
 
   const help = document.createElement('div');
   help.style.cssText = 'text-align:center; margin-top:10px; color:var(--muted); font-size:13px;';
-  help.innerHTML = 'Mouse / ↑↓ to move paddle · First to 10 wins';
+  help.innerHTML = 'Mouse / touch / ↑↓ to move paddle · First to 10 wins';
   root.appendChild(help);
 
   if (isMultiplayer) {
@@ -45,17 +45,31 @@ export function mountPong(root, { onScore, user }) {
   let ball = { x: W / 2, y: H / 2, vx: 4, vy: 2, r: 8 };
   let mySide = 'left'; // default for SP
 
-  // Input
+  // Input — map pointer Y into canvas coordinate space (canvas may be CSS-scaled)
   let mouseTargetY = H / 2;
-  canvas.addEventListener('mousemove', (e) => {
+  function pointerToCanvasY(clientY) {
     const r = canvas.getBoundingClientRect();
-    mouseTargetY = e.clientY - r.top;
-  });
-  window.addEventListener('keydown', (e) => {
+    return (clientY - r.top) * (H / r.height);
+  }
+  canvas.addEventListener('mousemove', (e) => { mouseTargetY = pointerToCanvasY(e.clientY); });
+  canvas.addEventListener('touchmove', (e) => {
+    if (e.touches[0]) mouseTargetY = pointerToCanvasY(e.touches[0].clientY);
+    e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches[0]) mouseTargetY = pointerToCanvasY(e.touches[0].clientY);
+  }, { passive: true });
+  const onKey = (e) => {
     if (e.key === 'ArrowUp') mouseTargetY -= 30;
     if (e.key === 'ArrowDown') mouseTargetY += 30;
     mouseTargetY = Math.max(PAD_H/2, Math.min(H - PAD_H/2, mouseTargetY));
+  };
+  window.addEventListener('keydown', onKey);
+  // Cleanup keydown listener when the canvas is removed (route change)
+  const _mo = new MutationObserver(() => {
+    if (!document.body.contains(canvas)) { window.removeEventListener('keydown', onKey); over = true; _mo.disconnect(); }
   });
+  _mo.observe(document.body, { childList: true, subtree: true });
 
   if (!isMultiplayer) {
     document.getElementById('go-mp').onclick = () => {
@@ -95,12 +109,23 @@ export function mountPong(root, { onScore, user }) {
 
       draw();
       if (over) {
-        drawOverlay(won ? 'You win!' : 'CPU wins');
+        drawOverlay(won ? 'You win! — tap / press R to play again' : 'CPU wins — tap / press R to play again');
         if (won && onScore) onScore(sp * 50);
         return;
       }
       requestAnimationFrame(loop);
     }
+    function restart() {
+      sp = 0; sc = 0; over = false; won = false;
+      document.getElementById('sp').textContent = '0';
+      document.getElementById('sc').textContent = '0';
+      p1y = H / 2 - PAD_H / 2; p2y = H / 2 - PAD_H / 2;
+      reset();
+      requestAnimationFrame(loop);
+    }
+    canvas.addEventListener('click', () => { if (over) restart(); });
+    canvas.addEventListener('touchend', () => { if (over) restart(); });
+    window.addEventListener('keydown', (e) => { if (over && (e.key === 'r' || e.key === 'R')) restart(); });
     requestAnimationFrame(loop);
   }
 

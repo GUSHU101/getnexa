@@ -70,12 +70,14 @@ function VirtualControls() {
 
 // --- Holographic Tilt Effect ---
 function initTilt(el) {
+  if (typeof gsap === 'undefined') return;
   el.addEventListener('mousemove', e => {
     const rect = el.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
     gsap.to(el, { rotateY: x * 15, rotateX: -y * 15, scale: 1.05, duration: 0.5, ease: 'power2.out' });
   });
+  el.addEventListener('mouseleave', () => {
     gsap.to(el, { rotateY: 0, rotateX: 0, scale: 1, duration: 0.5 });
   });
 }
@@ -155,6 +157,8 @@ export function GamesPage() {
       h('div', { id: 'games-grid', class: 'grid' }),
       h('div', { id: 'pagination', style: 'margin-top: 60px; display: flex; gap: 10px; justify-content: center;' })
     )
+  );
+
   function update() {
     const grid = container.querySelector('#games-grid');
     const pag = container.querySelector('#pagination');

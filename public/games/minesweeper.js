@@ -34,7 +34,19 @@ export function mountMinesweeper(root, { onScore }) {
     }
   }
   function countAdj(x, y) { return neighbors(x, y).filter(([a, b]) => mines.has(key(a, b))).length; }
-  function open(x, y, auto = false) {
+  function setStatus(msg) {
+    help.innerHTML = msg || 'Left-click / tap: reveal · Right-click / long-press: flag · Clear all non-mines to win';
+  }
+  function checkWin() {
+    if (opened === W * H - MINES) {
+      over = true;
+      const sec = Math.round((Date.now() - start) / 1000);
+      const score = Math.max(100, 3000 - sec * 10);
+      setStatus(`🏆 Swept clean in ${sec}s! Score: ${score}`);
+      if (onScore) onScore(score);
+    }
+  }
+  function open(x, y) {
     if (over) return;
     const k = key(x, y); const el = cells[k];
     if (el.classList.contains('open') || el.classList.contains('flag')) return;
@@ -42,22 +54,16 @@ export function mountMinesweeper(root, { onScore }) {
     el.classList.add('open'); opened++;
     if (mines.has(k)) {
       over = true; el.classList.add('mine'); el.textContent = '💣';
-      for (const m of mines) cells[m].classList.add('mine');
-      cells[m] && (cells[m].textContent = '💣');
+      for (const m of mines) { cells[m].classList.add('mine'); cells[m].textContent = '💣'; }
+      setStatus('💥 Boom! Hit a mine. Press Restart to try again.');
       return;
     }
     const n = countAdj(x, y);
     if (n > 0) { el.textContent = String(n); el.style.color = ['', '#5b8cff', '#24d1a1', '#ffb020', '#ff5b6b', '#b77cff', '#5af0ea', '#fff', '#ccc'][n]; }
     else {
-      for (const [nx, ny] of neighbors(x, y)) open(nx, ny, true);
+      for (const [nx, ny] of neighbors(x, y)) open(nx, ny);
     }
-    if (!auto && opened === W * H - MINES) {
-      over = true;
-      const sec = Math.round((Date.now() - start) / 1000);
-      const score = Math.max(100, 3000 - sec * 10);
-      alert(`Swept clean! Score: ${score}`);
-      if (onScore) onScore(score);
-    }
+    checkWin();
   }
   function flag(x, y) {
     const el = cells[key(x, y)];
@@ -70,8 +76,16 @@ export function mountMinesweeper(root, { onScore }) {
 
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const c = document.createElement('div'); c.className = 'mine-cell';
-    c.addEventListener('click', () => open(x, y));
+    let lpTimer = null, longPressed = false;
+    c.addEventListener('click', () => { if (!longPressed) open(x, y); longPressed = false; });
     c.addEventListener('contextmenu', (e) => { e.preventDefault(); flag(x, y); });
+    // Touch long-press to flag
+    c.addEventListener('touchstart', () => {
+      longPressed = false;
+      lpTimer = setTimeout(() => { longPressed = true; flag(x, y); if (navigator.vibrate) navigator.vibrate(15); }, 350);
+    }, { passive: true });
+    c.addEventListener('touchend', () => clearTimeout(lpTimer));
+    c.addEventListener('touchmove', () => clearTimeout(lpTimer), { passive: true });
     grid.appendChild(c); cells.push(c);
   }
   document.getElementById('rst').onclick = () => mountMinesweeper(root, { onScore });
