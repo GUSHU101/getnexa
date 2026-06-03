@@ -352,6 +352,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   .footer-grid{grid-template-columns:1fr;gap:28px}.footer-bottom{flex-direction:column;text-align:center}
   .profile-header{flex-direction:column;text-align:center}
   .auth-card{padding:28px 20px}
+  .account-cols{grid-template-columns:1fr!important}
   .section-head-row{flex-direction:column;align-items:flex-start}
   .search-wrap{width:100%}
   .hero-btns .btn-lg{padding:15px 28px;font-size:13px}
