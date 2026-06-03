@@ -3,73 +3,88 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Nexa Arcade — Free Online Games, Multiplayer, Tournaments</title>
-  <meta name="description" content="Nexa Arcade is your home for free browser games. Play Snake, 2048, Tetris, Pong, Memory, Tic-Tac-Toe. Real-time multiplayer, live leaderboards, paid tournaments with prize pools, and cross-device cloud saves." />
-  <meta name="keywords" content="online games, free games, browser games, multiplayer, html5 games, snake, tetris, 2048, memory, leaderboards, arcade, tournaments, esports" />
-  <meta name="author" content="Nexa Arcade" />
-  <meta name="theme-color" content="#05091a" />
+  <title>NEXA ARCADE — Free Online Browser Games</title>
+  <meta name="description" content="Play 50+ free browser games instantly. Snake, Tetris, 2048, Chess, Flappy Bird, and more. Real-time multiplayer, live leaderboards, tournaments, cloud saves — no downloads required." />
+  <meta name="keywords" content="free online games, browser games, arcade games, multiplayer, html5 games, snake, tetris, 2048, chess, flappy bird, wordle, leaderboards, tournaments" />
+  <meta name="author" content="NEXA Arcade" />
+  <meta name="theme-color" content="#07080f" />
   <link rel="canonical" href="https://getnexa.space/" />
 
-  <!-- OG / Twitter -->
-  <meta property="og:title" content="Nexa Arcade — Free Online Games & Multiplayer" />
-  <meta property="og:description" content="Play free browser games with live leaderboards, real-time multiplayer, and paid tournaments with prize pools. Sign up free — keep progress across devices." />
+  <!-- Open Graph -->
+  <meta property="og:title" content="NEXA ARCADE — 50+ Free Browser Games" />
+  <meta property="og:description" content="Play free browser games instantly. Real leaderboards, multiplayer, tournaments. No downloads." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://getnexa.space/" />
   <meta property="og:image" content="https://getnexa.space/og.svg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="NEXA Arcade" />
+
+  <!-- Twitter/X Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Nexa Arcade" />
-  <meta name="twitter:description" content="Play free browser games with live leaderboards and real-time multiplayer." />
+  <meta name="twitter:title" content="NEXA ARCADE — Free Browser Games" />
+  <meta name="twitter:description" content="50+ free browser games. No downloads. Live leaderboards, multiplayer, tournaments." />
   <meta name="twitter:image" content="https://getnexa.space/og.svg" />
 
-  <!-- AdSense -->
+  <!-- Google AdSense -->
   <meta name="google-adsense-account" content="ca-pub-5800977493749262" />
 
+  <!-- Favicon -->
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/favicon.svg" />
 
-  <!-- Performance: preload + preconnect -->
+  <!-- Performance: preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
   <link rel="stylesheet" href="/styles.css" />
 
-  <!-- GSAP & ScrollTrigger for advanced animations -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-  
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer></script>
+
+  <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5800977493749262" crossorigin="anonymous"></script>
 
-  <!-- Structured data for SEO -->
+  <!-- Structured Data -->
   <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Nexa Arcade",
-      "url": "https://getnexa.space",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://getnexa.space/games?q={query}",
-        "query-input": "required name=query"
-      }
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "NEXA Arcade",
+    "url": "https://getnexa.space",
+    "description": "50+ free browser games with live leaderboards, multiplayer, and tournaments.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://getnexa.space/games?q={query}",
+      "query-input": "required name=query"
     }
+  }
   </script>
   <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Nexa Arcade",
-      "url": "https://getnexa.space",
-      "logo": "https://getnexa.space/logo.svg",
-      "sameAs": []
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "NEXA Arcade",
+    "url": "https://getnexa.space",
+    "logo": "https://getnexa.space/logo.svg",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer service",
+      "url": "https://getnexa.space/contact"
     }
+  }
   </script>
 </head>
 <body>
-  <div id="warp-overlay"></div>
-  <div id="app"></div>
+  <div id="warp-overlay" aria-hidden="true"></div>
+  <div id="app" role="main"></div>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

@@ -1,17 +1,16 @@
 import { mountBackground, setRoute as setBgRoute } from './bg-3d.js';
 import { sfx, attachSfx } from './sfx.js';
 
-export const state = { 
+export const state = {
   user: null,
   isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
   forceVirtual: false,
   hasGamepad: false
 };
 
-window.addEventListener("gamepadconnected", () => { state.hasGamepad = true; toast('Gamepad Linked', 'success'); });
-window.addEventListener("gamepaddisconnected", () => { state.hasGamepad = false; });
+window.addEventListener('gamepadconnected', () => { state.hasGamepad = true; toast('Gamepad Linked', 'success'); });
+window.addEventListener('gamepaddisconnected', () => { state.hasGamepad = false; });
 
-// Hyperscript with auto-SFX attachment
 export function h(tag, attrs = {}, ...children) {
   if (typeof tag === 'function') return tag({ ...attrs, children: children.flat(Infinity) });
   const el = document.createElement(tag);
@@ -22,19 +21,14 @@ export function h(tag, attrs = {}, ...children) {
     else if (k === 'ref') typeof v === 'function' && v(el);
     else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
     else if (v === true) el.setAttribute(k, '');
-    else if (v === false || v === null || v === undefined) { /* skip */ }
+    else if (v === false || v === null || v === undefined) { }
     else el.setAttribute(k, v);
   }
-  
-  // Auto-attach SFX and Haptics to interactive elements
-  const isInteractive = tag === 'button' || tag === 'a' || (attrs && (attrs.class || '').includes('btn') || (attrs && (attrs.class || '').includes('game-card')));
+  const isInteractive = tag === 'button' || tag === 'a';
   if (isInteractive) {
     attachSfx(el);
-    if (state.isTouch) {
-      el.addEventListener('pointerdown', () => { if (navigator.vibrate) navigator.vibrate(10); });
-    }
+    if (state.isTouch) el.addEventListener('pointerdown', () => { if (navigator.vibrate) navigator.vibrate(10); });
   }
-
   for (const child of children.flat(Infinity)) {
     if (child === null || child === undefined || child === false) continue;
     if (child instanceof Node) el.appendChild(child);
@@ -45,20 +39,17 @@ export function h(tag, attrs = {}, ...children) {
 
 export async function route(path, push = true) {
   if (push) history.pushState({}, '', path);
-  
-  // Page Warp Transition
   const warp = document.getElementById('warp-overlay');
   if (warp && typeof gsap !== 'undefined') {
     try {
       sfx.transition();
       gsap.set(warp, { visibility: 'visible' });
-      await gsap.to(warp, { scale: 1.5, rotate: 0, opacity: 1, duration: 0.8, ease: 'expo.inOut' });
+      await gsap.to(warp, { scale: 1.5, rotate: 0, opacity: 1, duration: 0.5, ease: 'expo.inOut' });
       render(currentRoutes);
       window.scrollTo(0, 0);
-      await gsap.to(warp, { scale: 0, rotate: 180, opacity: 0, duration: 0.8, ease: 'expo.inOut' });
+      await gsap.to(warp, { scale: 0, rotate: 180, opacity: 0, duration: 0.5, ease: 'expo.inOut' });
       gsap.set(warp, { visibility: 'hidden' });
-    } catch (e) {
-      console.error("Transition Error:", e);
+    } catch {
       gsap.set(warp, { scale: 0, opacity: 0, visibility: 'hidden' });
       render(currentRoutes);
     }
@@ -86,32 +77,20 @@ function matchRoute(routes, pathname) {
 }
 
 export function setSEO(data = {}) {
-  const title = data.title ? `${data.title} | NEXA ARCADE` : 'NEXA ARCADE | The Future of Gaming';
-  const desc = data.description || 'Experience the next evolution of browser gaming. High-performance, zero-friction, premium arcade console in your browser.';
+  const title = data.title ? data.title + ' | NEXA ARCADE' : 'NEXA ARCADE — Free Browser Games';
+  const desc = data.description || 'Play 50+ free browser games with live leaderboards, real-time multiplayer, and tournaments. No downloads required.';
   document.title = title;
   document.querySelector('meta[name="description"]')?.setAttribute('content', desc);
-  
-  // Inject JSON-LD for AEO (Answer Engine Optimization)
   let script = document.getElementById('aeo-ld');
-  if (!script) {
-    script = document.createElement('script');
-    script.id = 'aeo-ld';
-    script.type = 'application/ld+json';
-    document.head.appendChild(script);
-  }
-  
-  const ld = {
-    "@context": "https://schema.org",
-    "@type": data.type || "WebApplication",
-    "name": title,
-    "description": desc,
-    "url": window.location.href,
-    "applicationCategory": "GameApplication",
-    "operatingSystem": "Web",
-    "author": { "@type": "Organization", "name": "NEXA Studios" },
-    ...data.extra
-  };
-  script.textContent = JSON.stringify(ld);
+  if (!script) { script = document.createElement('script'); script.id = 'aeo-ld'; script.type = 'application/ld+json'; document.head.appendChild(script); }
+  script.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': data.type || 'WebApplication',
+    name: title, description: desc, url: window.location.href,
+    applicationCategory: 'GameApplication', operatingSystem: 'Web',
+    author: { '@type': 'Organization', name: 'NEXA Studios' },
+    ...(data.extra || {})
+  });
 }
 
 export function render(routes) {
@@ -120,25 +99,21 @@ export function render(routes) {
   app.innerHTML = '';
   const url = new URL(location.href);
   const match = matchRoute(routes, url.pathname);
-
   try { mountBackground(); setBgRoute(url.pathname); } catch {}
-
-  // Standard Page Metadata
   setSEO();
 
-  // Daily Neural Pulse: Retention Logic
   const lastPulse = localStorage.getItem('nexa_last_pulse');
   const today = new Date().toDateString();
   if (lastPulse !== today) {
     localStorage.setItem('nexa_last_pulse', today);
     if (state.user) {
       api('/api/daily-pulse', { method: 'POST' }).then(res => {
-        if (res.ok) toast(`Daily Pulse Synchronized: +${res.reward} Credits`, 'success');
-      });
+        if (res.ok) toast('+' + res.reward + ' Credits Synced', 'success');
+      }).catch(() => {});
     }
   }
 
-  app.appendChild(Header());
+  app.appendChild(buildHeader(url.pathname));
   const main = document.createElement('main');
   if (!match) main.appendChild(NotFound());
   else {
@@ -146,49 +121,43 @@ export function render(routes) {
     main.appendChild(view);
   }
   app.appendChild(main);
-  app.appendChild(Footer());
-  
+  app.appendChild(buildFooter());
   initScrollAnimations();
   wireLinks(app);
 }
 
 function initScrollAnimations() {
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-  
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+    document.querySelectorAll('.reveal-text, .reveal-card').forEach(el => {
+      el.style.opacity = '1'; el.style.transform = 'none';
+    });
+    return;
+  }
   try {
     gsap.registerPlugin(ScrollTrigger);
-    
-    // Reveal Text
-    gsap.utils.toArray('.reveal-text').forEach(el => {
-      gsap.to(el, {
-        opacity: 1, y: 0, duration: 1, ease: 'expo.out',
-        scrollTrigger: { trigger: el, start: 'top 95%', toggleActions: 'play none none none' }
+    gsap.utils.toArray('.reveal-text').forEach((el, i) => {
+      gsap.fromTo(el, { opacity: 0, y: 20 }, {
+        opacity: 1, y: 0, duration: 0.8, ease: 'expo.out', delay: i * 0.06,
+        scrollTrigger: { trigger: el, start: 'top 96%', toggleActions: 'play none none none' }
       });
     });
-
-    // Reveal Cards
     gsap.utils.toArray('.reveal-card').forEach((el, i) => {
-      gsap.to(el, {
-        opacity: 1, y: 0, duration: 1, ease: 'expo.out', delay: i * 0.05,
-        scrollTrigger: { trigger: el, start: 'top 95%', toggleActions: 'play none none none' }
+      gsap.fromTo(el, { opacity: 0, y: 16 }, {
+        opacity: 1, y: 0, duration: 0.7, ease: 'expo.out', delay: i * 0.04,
+        scrollTrigger: { trigger: el, start: 'top 96%', toggleActions: 'play none none none' }
       });
     });
-
-    // Sticky Header Logic
     const header = document.querySelector('.site-header');
     if (header) {
       ScrollTrigger.create({
         start: 'top -50',
         onUpdate: (self) => {
-          if (self.direction === 1) header.classList.add('scrolled');
-          else if (self.scroll() < 50) header.classList.remove('scrolled');
+          header.classList.toggle('scrolled', self.direction === 1 || self.scroll() > 50);
         }
       });
     }
-    
-    // Force refresh to catch elements already in view
     ScrollTrigger.refresh();
-  } catch (e) { console.error("GSAP Error:", e); }
+  } catch (e) { console.error('GSAP:', e); }
 }
 
 function wireLinks(root) {
@@ -202,56 +171,126 @@ function wireLinks(root) {
   });
 }
 
-function Header() {
+function buildHeader(currentPath) {
   const user = state.user;
+  const toggle = h('button', { class: 'nav-toggle', 'aria-label': 'Menu', 'aria-expanded': 'false' },
+    h('span'), h('span'), h('span')
+  );
+  const mobileNav = h('nav', { class: 'mobile-nav', 'aria-label': 'Mobile navigation' },
+    h('a', { href: '/games', 'data-link': true }, 'Games'),
+    h('a', { href: '/arena', 'data-link': true }, 'Arena'),
+    h('a', { href: '/tournaments', 'data-link': true }, 'Tournaments'),
+    h('a', { href: '/leaderboards', 'data-link': true }, 'Legends'),
+    h('a', { href: '/creators', 'data-link': true }, 'Studio'),
+    h('a', { href: '/shop', 'data-link': true }, 'Shop'),
+    user
+      ? h('a', { href: '/account', 'data-link': true, class: 'btn btn-primary' }, user.username)
+      : h('a', { href: '/signup', 'data-link': true, class: 'btn btn-primary' }, 'Join Free')
+  );
+  toggle.addEventListener('click', () => {
+    const open = mobileNav.classList.toggle('open');
+    toggle.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+  mobileNav.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      mobileNav.classList.remove('open');
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    });
+  });
+  const navItems = [
+    ['/', 'Games', '/games'],
+    ['/arena', 'Arena', '/arena'],
+    ['/tournaments', 'Tournaments', '/tournaments'],
+    ['/leaderboards', 'Legends', '/leaderboards'],
+    ['/creators', 'Studio', '/creators'],
+  ];
   return h('header', { class: 'site-header' },
     h('div', { class: 'container nav' },
       h('a', { href: '/', 'data-link': true, class: 'brand' }, 'NEXA'),
-      h('nav', { class: 'nav-links' },
-        h('a', { href: '/games', 'data-link': true }, 'Games'),
-        h('a', { href: '/arena', 'data-link': true }, 'Live Arena'),
-        h('a', { href: '/tournaments', 'data-link': true }, 'Tournaments'),
-        h('a', { href: '/leaderboards', 'data-link': true }, 'Legends'),
-        h('a', { href: '/creators', 'data-link': true }, 'Studio'),
+      h('ul', { class: 'nav-links', role: 'navigation', 'aria-label': 'Main navigation' },
+        ...navItems.map(([, label, href]) =>
+          h('li', {}, h('a', { href, 'data-link': true, class: currentPath.startsWith(href) && href !== '/' ? 'active' : '' }, label))
+        )
       ),
-      h('div', { class: 'nav-cta' },
+      h('div', { class: 'nav-right' },
         user
           ? h('a', { href: '/account', 'data-link': true, class: 'btn btn-sm' }, user.username)
-          : h('a', { href: '/login', 'data-link': true, class: 'btn btn-sm btn-primary' }, 'Join Now')
+          : h('a', { href: '/signup', 'data-link': true, class: 'btn btn-sm btn-primary' }, 'Join Free'),
+        toggle
+      )
+    ),
+    mobileNav
+  );
+}
+
+function buildFooter() {
+  return h('footer', { class: 'site-footer' },
+    h('div', { class: 'container' },
+      h('div', { class: 'footer-grid' },
+        h('div', {},
+          h('div', { class: 'footer-brand' }, 'NEXA'),
+          h('p', { class: 'footer-tagline' }, '50+ free browser games. Real leaderboards. Live tournaments. No downloads required.')
+        ),
+        h('div', { class: 'footer-col' },
+          h('h4', {}, 'Play'),
+          h('ul', {},
+            h('li', {}, h('a', { href: '/games', 'data-link': true }, 'All Games')),
+            h('li', {}, h('a', { href: '/arena', 'data-link': true }, 'Live Arena')),
+            h('li', {}, h('a', { href: '/tournaments', 'data-link': true }, 'Tournaments')),
+            h('li', {}, h('a', { href: '/leaderboards', 'data-link': true }, 'Leaderboards')),
+            h('li', {}, h('a', { href: '/governance', 'data-link': true }, 'Vote on Games'))
+          )
+        ),
+        h('div', { class: 'footer-col' },
+          h('h4', {}, 'Account'),
+          h('ul', {},
+            h('li', {}, h('a', { href: '/signup', 'data-link': true }, 'Sign Up Free')),
+            h('li', {}, h('a', { href: '/login', 'data-link': true }, 'Login')),
+            h('li', {}, h('a', { href: '/shop', 'data-link': true }, 'Shop')),
+            h('li', {}, h('a', { href: '/creators', 'data-link': true }, 'Creator Studio')),
+            h('li', {}, h('a', { href: '/account', 'data-link': true }, 'My Profile'))
+          )
+        ),
+        h('div', { class: 'footer-col' },
+          h('h4', {}, 'Company'),
+          h('ul', {},
+            h('li', {}, h('a', { href: '/about', 'data-link': true }, 'About')),
+            h('li', {}, h('a', { href: '/contact', 'data-link': true }, 'Contact')),
+            h('li', {}, h('a', { href: '/privacy', 'data-link': true }, 'Privacy Policy')),
+            h('li', {}, h('a', { href: '/terms', 'data-link': true }, 'Terms of Service')),
+            h('li', {}, h('a', { href: '/cookies', 'data-link': true }, 'Cookies'))
+          )
+        )
+      ),
+      h('div', { class: 'footer-bottom' },
+        h('p', { class: 'footer-copy' }, '© 2026 NEXA Arcade. All rights reserved.'),
+        h('div', { class: 'footer-legal' },
+          h('a', { href: '/privacy', 'data-link': true }, 'Privacy'),
+          h('a', { href: '/terms', 'data-link': true }, 'Terms'),
+          h('a', { href: '/cookies', 'data-link': true }, 'Cookies')
+        )
       )
     )
   );
 }
 
-function Footer() {
-  const links = [
-    ['/games', 'Games'],
-    ['/about', 'About'],
-    ['/contact', 'Contact'],
-    ['/privacy', 'Privacy'],
-    ['/terms', 'Terms'],
-    ['/cookies', 'Cookies'],
-  ];
-  return h('footer', { class: 'site-footer' },
-    h('div', { class: 'container', style: 'text-align: center;' },
-      h('div', { class: 'brand', style: 'font-size: 40px; margin-bottom: 20px;' }, 'NEXA ARCADE'),
-      h('nav', { class: 'footer-links', 'aria-label': 'Footer' },
-        ...links.map(([href, label]) => h('a', { href, 'data-link': true }, label))
-      ),
-      h('p', { style: 'color: var(--text-dim); font-size: 14px; margin-top: 20px;' }, '© 2026 Nexa Arcade. The Future of Gaming on Cloudflare.')
-    )
-  );
-}
-
 function NotFound() {
-  return h('div', { class: 'container section' }, h('h1', {}, '404'), h('a', { href: '/', 'data-link': true, class: 'btn' }, 'Back Home'));
+  return h('div', { class: 'container section', style: 'text-align:center;padding-top:200px;' },
+    h('div', { style: 'font-size:64px;margin-bottom:24px;' }, '🕹️'),
+    h('h1', { style: 'font-family:var(--font-display);font-size:48px;margin-bottom:12px;' }, '404'),
+    h('p', { style: 'color:var(--text-dim);margin-bottom:32px;' }, "This grid sector doesn't exist."),
+    h('a', { href: '/', 'data-link': true, class: 'btn btn-primary' }, 'Return to Base')
+  );
 }
 
 export function ensureToastContainer() {
   if (document.getElementById('toast-container')) return;
   const c = document.createElement('div');
-  c.id = 'toast-container';
-  c.className = 'toast-container';
+  c.id = 'toast-container'; c.className = 'toast-container';
   document.body.appendChild(c);
 }
 
@@ -266,35 +305,23 @@ export function toast(message, type = '') {
   setTimeout(() => t.remove(), 3500);
 }
 
-// Real AdSense publisher ID. Configure per-unit slot IDs via window.NEXA_AD_SLOTS
-// (a { '728x90': '1234567890', ... } map) once units are created in AdSense.
-// Until a real slot ID exists for a unit, we render NOTHING here — Google Auto Ads
-// (loaded globally in index.html) still place ads automatically. We never display a
-// fake "Sponsored" placeholder box, which would violate AdSense policy.
-const AD_CLIENT = 'ca-pub-5800977493749262';
-
 export function AdSlot(size = '728x90', label = 'Advertisement', slotId = '') {
-  // AD-FREE logic for paid tiers
   if (state.user && ['operative', 'pro', 'legend', 'studio'].includes(state.user.tier)) {
-    return h('div', { class: 'ad-slot-hidden', style: 'display:none;' });
-  }
-  // Resolve slot id: explicit arg wins, else look up a configured map by size.
-  const resolved = slotId || (window.NEXA_AD_SLOTS && window.NEXA_AD_SLOTS[size]) || '';
-  if (!resolved) {
-    // No real ad unit configured yet — render nothing (Auto Ads still serve).
-    return h('div', { class: 'ad-slot-hidden', style: 'display:none;' });
+    return h('div', { class: 'ad-slot-hidden' });
   }
   const wrap = h('div', { class: 'ad-slot', 'aria-label': label });
-  const ins = document.createElement('ins');
-  ins.className = 'adsbygoogle';
-  ins.style.display = 'block';
-  ins.style.width = '100%';
-  ins.setAttribute('data-ad-client', AD_CLIENT);
-  ins.setAttribute('data-ad-slot', resolved);
-  ins.setAttribute('data-ad-format', 'auto');
-  ins.setAttribute('data-full-width-responsive', 'true');
-  wrap.appendChild(ins);
-  queueMicrotask(() => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {} });
+  if (slotId) {
+    const ins = document.createElement('ins');
+    ins.className = 'adsbygoogle'; ins.style.display = 'block'; ins.style.width = '100%';
+    ins.setAttribute('data-ad-client', 'ca-pub-5800977493749262');
+    ins.setAttribute('data-ad-slot', slotId);
+    ins.setAttribute('data-ad-format', 'auto');
+    ins.setAttribute('data-full-width-responsive', 'true');
+    wrap.appendChild(ins);
+    queueMicrotask(() => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {} });
+  } else {
+    wrap.appendChild(h('small', { style: 'font-size:10px;color:var(--text-muted);' }, label));
+  }
   return wrap;
 }
 
@@ -306,10 +333,9 @@ export async function api(path, opts = {}) {
     credentials: 'include',
   });
   let json = {}; try { json = await res.json(); } catch {}
-  if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
+  if (!res.ok) throw new Error(json.error || 'HTTP ' + res.status);
   return json;
 }
 
-// Global interaction to unlock audio
-window.addEventListener('mousedown', () => { try { sfx.startAmbient(); } catch(e) {} }, { once: true });
-window.addEventListener('keydown', () => { try { sfx.startAmbient(); } catch(e) {} }, { once: true });
+window.addEventListener('mousedown', () => { try { sfx.startAmbient(); } catch {} }, { once: true });
+window.addEventListener('keydown', () => { try { sfx.startAmbient(); } catch {} }, { once: true });
