@@ -37,7 +37,7 @@
   "vars": {
     "SITE_NAME": "Nexa Arcade",
     "SITE_URL": "https://getnexa.space",
-    "GOOGLE_CLIENT_ID": ""
+    "GOOGLE_CLIENT_ID": "799924012041-15h98skfoftgphn9j0ug60dhdgpqjd35.apps.googleusercontent.com"
   },
   "routes": [
     { "pattern": "getnexa.space", "custom_domain": true },

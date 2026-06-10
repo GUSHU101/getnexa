@@ -18,6 +18,7 @@ type Bindings = PayBindings & {
   AI?: any;
   SITE_NAME: string;
   SITE_URL: string;
+  GOOGLE_CLIENT_ID?: string;
   DISCORD_WEBHOOK_URL?: string;
   TURNSTILE_SECRET_KEY?: string;
 };
@@ -266,6 +267,15 @@ app.post('/api/auth/logout', async (c) => {
 app.get('/api/auth/me', async (c) => {
   const user = await getUserFromSession(c);
   return c.json({ user: user || null });
+});
+
+// Public, non-sensitive config consumed by the SPA on boot (app.js)
+app.get('/api/config', (c) => {
+  return c.json({
+    google_client_id: c.env.GOOGLE_CLIENT_ID || '',
+    site_name: c.env.SITE_NAME || 'Nexa Arcade',
+    site_url: c.env.SITE_URL || 'https://getnexa.space',
+  });
 });
 
 // ---------- scores ----------
