@@ -1,4 +1,53 @@
 import { h, api, toast, state, route } from '../core.js';
+import { trackEvent } from '../firebase.js';
+
+function AgeVerificationPanel(user) {
+  if (user.age_verified) {
+    return h('div', { class: 'panel' },
+      h('div', { style: 'display:flex;align-items:center;gap:10px;' },
+        h('span', { style: 'font-size:24px;' }, '✅'),
+        h('div', {},
+          h('h4', { style: 'margin:0;' }, 'Age Verified (18+)'),
+          h('p', { style: 'font-size:12px;color:var(--text-muted);margin:2px 0 0;' }, 'Eligible for cash prize tournaments.')
+        )
+      )
+    );
+  }
+  const dobInput = h('input', { type: 'date', class: 'form-input', style: 'width:100%;margin:8px 0;',
+    max: new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  });
+  const verifyBtn = h('button', { class: 'btn btn-primary btn-block', onClick: async () => {
+    const dob = dobInput.value;
+    if (!dob) { toast('Enter your date of birth', 'error'); return; }
+    verifyBtn.disabled = true; verifyBtn.textContent = 'Verifying...';
+    try {
+      const res = await api('/api/auth/verify-age', { method: 'POST', body: { date_of_birth: dob } });
+      if (res.age_verified) {
+        state.user = { ...state.user, age_verified: 1 };
+        toast('Age verified! You can now enter cash tournaments.', 'success');
+        route('/tournaments');
+      } else {
+        toast('You must be 18+ for cash tournaments. You can still play all free tournaments.', 'error');
+        verifyBtn.disabled = false; verifyBtn.textContent = 'Verify Age';
+      }
+    } catch (e) {
+      toast(e.message || 'Verification failed', 'error');
+      verifyBtn.disabled = false; verifyBtn.textContent = 'Verify Age';
+    }
+  }}, 'Verify My Age (18+)');
+  return h('div', { class: 'panel' },
+    h('h3', {}, '🔞 Age Verification'),
+    h('p', { style: 'font-size:12px;color:var(--text-dim);margin:8px 0;line-height:1.6;' },
+      'Verify your age (18+) to enter cash prize tournaments. Required by law for skill-based prize competitions.'
+    ),
+    h('label', { style: 'font-size:12px;color:var(--text-muted);' }, 'Date of Birth'),
+    dobInput,
+    verifyBtn,
+    h('p', { style: 'font-size:10px;color:var(--text-muted);margin-top:8px;' },
+      'Your date of birth is stored securely and only used for age verification. See our Privacy Policy.'
+    )
+  );
+}
 
 const AVATAR_PRESETS = [
   '🕹️', '👾', '🚀', '🔥', '💎', '👑', '🦸', '🥷', '🐲', '🦄', '⚡', '🌈', '💀', '🤖', '🎮', '🏆',
@@ -30,6 +79,7 @@ export function LoginPage() {
         },
       });
       state.user = res.user;
+      trackEvent('login', { method: 'password' });
       toast('Welcome back, ' + res.user.username + '!', 'success');
       route('/account');
     } catch (err) {
@@ -117,6 +167,7 @@ export function SignupPage() {
         body: { username, email, password },
       });
       state.user = res.user;
+      trackEvent('sign_up', { method: 'password' });
       toast('Account created! Welcome, ' + res.user.username + '!', 'success');
       route('/games');
     } catch (err) {
@@ -327,10 +378,11 @@ export function AccountPage() {
         h('div', { class: 'panel' },
           h('h3', {}, 'Upgrade Tier'),
           h('p', { style: 'font-size:13px;color:var(--text-dim);margin:8px 0 16px;line-height:1.6;' },
-            'Go ad-free and unlock exclusive features with an Operative subscription.'
+            'Go ad-free and unlock exclusive features starting at $2.99/mo.'
           ),
-          h('a', { href: '/shop', 'data-link': true, class: 'btn btn-primary btn-block' }, '🏆 View Plans')
+          h('a', { href: '/shop', 'data-link': true, class: 'btn btn-primary btn-block' }, '🚀 See Plans — from $2.99/mo')
         ),
+        AgeVerificationPanel(user),
         user.tier === 'free' && h('div', { class: 'panel' },
           h('h3', {}, 'Daily Bonus'),
           h('p', { style: 'font-size:13px;color:var(--text-dim);margin:8px 0 16px;' }, 'Log in daily to earn free coins.'),

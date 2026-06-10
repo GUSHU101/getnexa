@@ -101,6 +101,6 @@ export function StaticPage(key) {
   return h('div', { class: 'container section', style: 'max-width: 820px;' },
     h('h1', {}, c.title),
     h('div', { class: 'panel', html: c.body }),
-    h('div', { style: 'margin-top: 20px;' }, AdSlot('728x90', 'Sponsored'))
+    AdSlot('inContent')
   );
 }

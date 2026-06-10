@@ -1,0 +1,5 @@
+shared-media
+shared-media/
+shared-media/**
+/shared-media
+/shared-media/**

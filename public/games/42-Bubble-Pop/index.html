@@ -1,0 +1,124 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bubble Pop</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#07080f;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Orbitron',monospace;color:#fff;padding:12px;user-select:none}
+h1{font-size:clamp(18px,5vw,30px);font-weight:900;letter-spacing:.1em;margin-bottom:4px;background:linear-gradient(135deg,#fff,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+#hud{display:flex;gap:20px;margin-bottom:12px;font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase}
+#hud span{color:#f472b6;font-weight:700;font-size:16px;display:block;margin-top:2px}
+#board{display:grid;gap:5px;margin-bottom:14px}
+.cell{width:clamp(36px,8vw,48px);height:clamp(36px,8vw,48px);border-radius:50%;cursor:pointer;transition:transform .12s,filter .12s;border:2px solid rgba(255,255,255,.12);position:relative;overflow:hidden}
+.cell::after{content:'';position:absolute;top:12%;left:18%;width:28%;height:22%;background:rgba(255,255,255,.5);border-radius:50%;transform:rotate(-30deg)}
+.cell:hover{transform:scale(1.12);filter:brightness(1.3)}
+.cell.pop{transform:scale(1.4)!important;opacity:0;transition:all .15s}
+.cell.empty{background:rgba(255,255,255,.04)!important;border-color:rgba(255,255,255,.06)!important;cursor:default}
+.cell.empty::after{display:none}
+#moves-bar{width:min(320px,90vw);height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-bottom:12px}
+#moves-fill{height:100%;background:linear-gradient(90deg,#f472b6,#818cf8);border-radius:4px;transition:width .3s}
+#msg{font-size:13px;font-weight:700;letter-spacing:.1em;min-height:20px;margin-bottom:12px;text-align:center}
+#start-btn{background:#f472b6;color:#fff;border:none;padding:10px 32px;border-radius:100px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:all .2s}
+#start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(244,114,182,.5)}
+</style>
+</head><body>
+<h1>BUBBLE POP</h1>
+<div id="sub">Match 3+ same-color bubbles to pop</div>
+<div id="hud">
+  <div>Score<span id="sc">0</span></div>
+  <div>Moves<span id="mv">20</span></div>
+  <div>Best<span id="best">0</span></div>
+</div>
+<div id="moves-bar"><div id="moves-fill" style="width:100%"></div></div>
+<div id="board"></div>
+<div id="msg">Press New Game to play!</div>
+<button id="start-btn">NEW GAME</button>
+<script>
+const COLS=8,ROWS=8,MAX_MOVES=20;
+const COLORS=['#f472b6','#818cf8','#34d399','#f59e0b','#60a5fa','#f87171'];
+let grid=[],score=0,moves=MAX_MOVES,best=+localStorage.getItem('bp-best')||0,running=false;
+const scEl=document.getElementById('sc'),mvEl=document.getElementById('mv'),bestEl=document.getElementById('best');
+const boardEl=document.getElementById('board'),msgEl=document.getElementById('msg'),movesFill=document.getElementById('moves-fill');
+bestEl.textContent=best;
+
+boardEl.style.gridTemplateColumns=`repeat(${COLS},1fr)`;
+
+function randColor(){return COLORS[Math.floor(Math.random()*COLORS.length)]}
+
+function buildGrid(){
+  grid=[];
+  for(let r=0;r<ROWS;r++){grid[r]=[];for(let c=0;c<COLS;c++)grid[r][c]=randColor();}
+}
+
+function renderGrid(){
+  boardEl.innerHTML='';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cell=document.createElement('div');
+      cell.className='cell';
+      const col=grid[r][c];
+      if(col){cell.style.background=col;cell.style.boxShadow=`0 0 8px ${col}66`;}
+      else cell.classList.add('empty');
+      cell.dataset.r=r;cell.dataset.c=c;
+      cell.onclick=()=>clickCell(r,c);
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+function flood(r,c,color,visited=new Set()){
+  const k=r+','+c;
+  if(r<0||r>=ROWS||c<0||c>=COLS)return[];
+  if(visited.has(k))return[];
+  if(grid[r][c]!==color)return[];
+  visited.add(k);
+  return[[r,c],...flood(r-1,c,color,visited),...flood(r+1,c,color,visited),...flood(r,c-1,color,visited),...flood(r,c+1,color,visited)];
+}
+
+function clickCell(r,c){
+  if(!running||!grid[r][c])return;
+  const color=grid[r][c];
+  const group=flood(r,c,color);
+  if(group.length<2){msgEl.textContent='Need 2+ matching bubbles!';msgEl.style.color='#f87171';setTimeout(()=>msgEl.textContent='',1200);return;}
+  // pop animation
+  group.forEach(([gr,gc])=>{
+    const idx=gr*COLS+gc;const cell=boardEl.children[idx];
+    if(cell){cell.classList.add('pop');}
+    grid[gr][gc]=null;
+  });
+  const pts=group.length*(group.length+1)*5;
+  score+=pts;scEl.textContent=score;
+  if(score>best){best=score;bestEl.textContent=best;localStorage.setItem('bp-best',best);}
+  moves--;mvEl.textContent=moves;
+  movesFill.style.width=(moves/MAX_MOVES*100)+'%';
+  msgEl.textContent='+'+pts+' pts!';msgEl.style.color='#34d399';
+  setTimeout(()=>{msgEl.textContent='';gravity();renderGrid();checkEnd();},220);
+  if(window.parent!==window)window.parent.postMessage({type:'score',game:'bubble-pop',score},'*');
+}
+
+function gravity(){
+  for(let c=0;c<COLS;c++){
+    let col=grid.map(r=>r[c]).filter(Boolean);
+    while(col.length<ROWS)col.unshift(null);
+    for(let r=0;r<ROWS;r++)grid[r][c]=col[r];
+  }
+}
+
+function checkEnd(){
+  if(moves<=0){
+    running=false;
+    msgEl.textContent='Out of moves! Score: '+score;msgEl.style.color='#f472b6';
+    document.getElementById('start-btn').style.display='block';
+  }
+}
+
+function startGame(){
+  score=0;moves=MAX_MOVES;running=true;
+  scEl.textContent=0;mvEl.textContent=MAX_MOVES;movesFill.style.width='100%';
+  msgEl.textContent='';
+  buildGrid();renderGrid();
+  document.getElementById('start-btn').style.display='none';
+}
+document.getElementById('start-btn').onclick=startGame;
+</script>
+</body></html>

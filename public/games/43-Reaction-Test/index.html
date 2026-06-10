@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reaction Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#07080f;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Orbitron',monospace;color:#fff;padding:20px;text-align:center;overflow:hidden;cursor:pointer;user-select:none}
+h1{font-size:clamp(20px,5vw,34px);font-weight:900;letter-spacing:.1em;margin-bottom:6px;background:linear-gradient(135deg,#fff,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#sub{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.12em;text-transform:uppercase;margin-bottom:36px}
+#arena{width:min(300px,85vw);height:min(300px,50vh);border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,4vw,22px);font-weight:700;letter-spacing:.08em;transition:background .2s,box-shadow .2s;position:relative;overflow:hidden;cursor:pointer;border:2px solid rgba(255,255,255,.08);margin-bottom:28px}
+#arena.wait{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.3);color:#ef4444}
+#arena.go{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.5);color:#10b981;box-shadow:0 0 60px rgba(16,185,129,.3);animation:pulse .3s ease-out}
+#arena.early{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3);color:#f59e0b}
+@keyframes pulse{0%{transform:scale(1.04)}100%{transform:scale(1)}}
+#timer{font-size:clamp(48px,14vw,80px);font-weight:900;letter-spacing:.04em;margin-bottom:10px;min-height:80px;color:#10b981}
+#hud{display:flex;gap:24px;margin-bottom:6px;font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase}
+#hud span{color:#10b981;font-weight:700;font-size:16px;display:block;margin-top:2px}
+#history{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:12px;min-height:20px}
+.hist-chip{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:100px;padding:3px 10px;font-size:10px;font-weight:700;color:#10b981;letter-spacing:.06em}
+</style>
+</head><body>
+<h1>REACTION TEST</h1>
+<div id="sub">Click the instant it turns green — not before</div>
+<div id="hud">
+  <div>Best<span id="best">--</span></div>
+  <div>Avg<span id="avg">--</span></div>
+  <div>Tries<span id="tries">0</span></div>
+</div>
+<div id="timer">---</div>
+<div id="arena" class="wait">WAIT FOR GREEN...</div>
+<div id="history"></div>
+<script>
+let state='idle',t0,timer,results=[],best=+localStorage.getItem('rt-best')||0;
+const arenaEl=document.getElementById('arena'),timerEl=document.getElementById('timer');
+const bestEl=document.getElementById('best'),avgEl=document.getElementById('avg'),triesEl=document.getElementById('tries');
+const histEl=document.getElementById('history');
+
+if(best)bestEl.textContent=best+'ms';
+
+function reset(){
+  clearTimeout(timer);state='idle';
+  arenaEl.className='wait';arenaEl.textContent='Click to start!';
+  timerEl.textContent='---';
+}
+
+function startWait(){
+  state='waiting';
+  arenaEl.className='wait';arenaEl.textContent='WAIT FOR GREEN...';
+  timerEl.textContent='...';
+  const delay=1500+Math.random()*4000;
+  timer=setTimeout(()=>{
+    if(state!=='waiting')return;
+    state='ready';t0=performance.now();
+    arenaEl.className='go';arenaEl.textContent='CLICK NOW!!!';
+    timerEl.textContent='GO!';
+  },delay);
+}
+
+function handleClick(){
+  if(state==='idle'){startWait();return;}
+  if(state==='waiting'){
+    clearTimeout(timer);state='early';
+    arenaEl.className='early';arenaEl.textContent='TOO EARLY! Wait for green.';
+    timerEl.textContent='⚡';
+    setTimeout(()=>reset(),1600);return;
+  }
+  if(state==='ready'){
+    const ms=Math.round(performance.now()-t0);
+    state='done';
+    results.push(ms);
+    const avg=Math.round(results.reduce((a,b)=>a+b)/results.length);
+    if(!best||ms<best){best=ms;localStorage.setItem('rt-best',best);}
+    bestEl.textContent=best+'ms';
+    avgEl.textContent=avg+'ms';
+    triesEl.textContent=results.length;
+    timerEl.textContent=ms+'ms';
+    arenaEl.textContent=ms<200?'INHUMAN ⚡':ms<300?'ELITE 🎯':ms<400?'FAST 🔥':ms<600?'GOOD 👍':'TOO SLOW 🐢';
+    const chip=document.createElement('div');chip.className='hist-chip';chip.textContent=ms+'ms';
+    histEl.prepend(chip);if(histEl.children.length>10)histEl.removeChild(histEl.lastChild);
+    if(window.parent!==window)window.parent.postMessage({type:'score',game:'reaction-test',score:Math.max(0,1000-ms)},'*');
+    setTimeout(()=>reset(),2000);
+  }
+}
+
+arenaEl.addEventListener('click',handleClick);
+arenaEl.addEventListener('touchstart',e=>{e.preventDefault();handleClick();},{passive:false});
+reset();arenaEl.textContent='Click to start!';
+</script>
+</body></html>

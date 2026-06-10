@@ -163,7 +163,7 @@ export function HomePage() {
     ),
 
     /* ── AD SLOT ── */
-    h('div', { class: 'container section-sm' }, AdSlot('728x90', 'Advertisement', '')),
+    AdSlot('inContent'),
 
     /* ── WHY NEXA ── */
     h('section', { class: 'section', style: 'background:rgba(255,255,255,0.015);' },
@@ -257,6 +257,6 @@ export function HomePage() {
     ),
 
     /* ── BOTTOM AD ── */
-    h('div', { class: 'container section-sm' }, AdSlot('728x90', 'Advertisement', ''))
+    AdSlot('inContent')
   );
 }

@@ -16,11 +16,19 @@ function mountExternalGame(folder) {
     container.innerHTML = '';
     const iframe = document.createElement('iframe');
     iframe.src = `/games/${folder}/index.html`;
+    iframe.title = folder.replace(/[-_]/g, ' ');
+    iframe.setAttribute('tabindex', '0');
+    iframe.allow = 'autoplay; gamepad; fullscreen';
     iframe.style.width = '100%';
     iframe.style.height = '600px';
     iframe.style.border = 'none';
     iframe.style.borderRadius = '12px';
     iframe.style.background = '#000';
+    iframe.style.display = 'block';
+    // Focus the game so the keyboard works immediately (no extra click needed)
+    iframe.addEventListener('load', () => { try { iframe.contentWindow.focus(); } catch {} });
+    // Re-grab focus whenever the user interacts with the stage
+    container.addEventListener('pointerdown', () => { try { iframe.contentWindow.focus(); } catch {} });
     container.appendChild(iframe);
   };
 }
@@ -141,29 +149,29 @@ export const GAMES = [
   // --- External Games ---
   { id: 'candy-crush', name: 'Candy Crush', short: 'Match candies to win.', emoji: '🍬', mount: mountExternalGame('01-Candy-Crush-Game'), theme: 1, song: 'betty boom boom.mp3' },
   { id: 'pacman', name: 'Pac-Man', short: 'Eat dots and avoid ghosts.', emoji: '🍕', mount: mountExternalGame('02-Pac-Man-Game'), theme: 2, song: 'alexzavesa-dance-playful-night-510786.mp3' },
-  { id: 'chess', name: 'Chess', short: 'Classic game of strategy.', emoji: '♟️', mount: mountExternalGame('03-Chess-Game'), theme: 3, song: 'ikoliks_aj-spring-easter-day-music-320427.mp3' },
+  { id: 'chess', name: 'Chess', short: 'Classic game of strategy.', emoji: '♟️', mount: mountExternalGame('03-Chess-Game'), theme: 3, song: 'ikoliks_aj-spring-easter-day-music-320427.mp3', multiplayer: true },
   { id: 'doodle-jump', name: 'Doodle Jump', short: 'Jump as high as you can.', emoji: '🪜', mount: mountExternalGame('04-Doodle-Jump-Game'), theme: 4, song: 'kontraa-water-afro-pop-music-445661.mp3' },
   { id: 'solitaire', name: 'Solitaire', short: 'Classic card game.', emoji: '🃏', mount: mountExternalGame('05-Solitaire-Game'), theme: 0, song: 'Daytime TV Raised.mp3' },
   { id: 'sudoku', name: 'Sudoku', short: 'Number placement puzzle.', emoji: '🔢', mount: mountExternalGame('06-Sudoku-Game'), theme: 1, song: 'Midnight Grind.mp3' },
   { id: 'crossy-road', name: 'Crossy Road', short: 'Cross the road safely.', emoji: '🐔', mount: mountExternalGame('07-Crossy-Road-Game'), theme: 2, song: 'Tropical Bass Land 2.mp3' },
-  { id: 'rps', name: 'Rock Paper Scissors', short: 'The ultimate duel.', emoji: '✊', mount: mountExternalGame('08-Rock-Paper-Scissors'), theme: 3, song: 'yakastreams-retro-gaming-271301.mp3' },
+  { id: 'rps', name: 'Rock Paper Scissors', short: 'The ultimate duel.', emoji: '✊', mount: mountExternalGame('08-Rock-Paper-Scissors'), theme: 3, song: 'yakastreams-retro-gaming-271301.mp3', multiplayer: true },
   { id: 'flappy-bird', name: 'Flappy Bird', short: 'Fly through pipes.', emoji: '🐦', mount: mountExternalGame('09-Flappy-Bird-Game'), theme: 4, song: 'Wi‑Fi Fridge.mp3' },
   { id: '2048-ext', name: '2048 Classic', short: 'Original 2048 tiles.', emoji: '🔢', mount: mountExternalGame('10-2048-Game'), theme: 0, song: 'alec_koff-carnaval-484622.mp3' },
-  { id: 'wordle', name: 'Wordle', short: 'Guess the daily word.', emoji: '📝', mount: mountExternalGame('11-Wordle-Game'), theme: 1, song: 'alexzavesa-dance-playful-night-510786.mp3' },
+  { id: 'wordle', name: 'Wordle', short: 'Guess the daily word.', emoji: '📝', mount: mountExternalGame('11-Wordle-Game'), theme: 1, song: 'alexzavesa-dance-playful-night-510786.mp3', multiplayer: true },
   { id: 'hangman', name: 'Hangman', short: 'Guess the word before it\'s too late.', emoji: '🪢', mount: mountExternalGame('12-Hangman-Game'), theme: 2, song: 'betty boom boom.mp3' },
   { id: 'tower-blocks', name: 'Tower Blocks', short: 'Build the tallest tower.', emoji: '🏗️', mount: mountExternalGame('13-Tower-Blocks'), theme: 3, song: 'energysound-powerful-percussion-513717.mp3' },
   { id: 'archery', name: 'Archery', short: 'Hit the bullseye.', emoji: '🏹', mount: mountExternalGame('14-Archery-Game'), theme: 4, song: 'energysound-stomp-action-music-513718.mp3' },
-  { id: 'tictactoe-ext', name: 'Tic-Tac-Toe Pro', short: 'Clean board battle.', emoji: '❌', mount: mountExternalGame('15-Tic-Tac-Toe'), theme: 0, song: 'ikoliks_aj-spring-easter-day-music-320427.mp3' },
+  { id: 'tictactoe-ext', name: 'Tic-Tac-Toe Pro', short: 'Clean board battle.', emoji: '❌', mount: mountExternalGame('15-Tic-Tac-Toe'), theme: 0, song: 'ikoliks_aj-spring-easter-day-music-320427.mp3', multiplayer: true },
   { id: 'minesweeper-ext', name: 'Minesweeper Retro', short: 'Classic grid clearing.', emoji: '💣', mount: mountExternalGame('16-Minesweeper-Game'), theme: 1, song: 'kontraa-water-afro-pop-music-445661.mp3' },
   { id: 'speed-typing', name: 'Speed Typing', short: 'How fast can you type?', emoji: '⌨️', mount: mountExternalGame('17-Speed-Typing-Game'), theme: 2, song: 'lightbeatsmusic-joyful-rhythm-walk-funk-513936.mp3' },
   { id: 'breakout-ext', name: 'Breakout Retro', short: 'Classic brick breaking.', emoji: '🧱', mount: mountExternalGame('18-Breakout-Game'), theme: 3, song: 'Daytime TV Raised.mp3' },
-  { id: 'ping-pong', name: 'Ping Pong', short: 'Table tennis arcade.', emoji: '🏓', mount: mountExternalGame('19-Ping-Pong-Game'), theme: 4, song: 'Midnight Grind.mp3' },
+  { id: 'ping-pong', name: 'Ping Pong', short: 'Table tennis arcade.', emoji: '🏓', mount: mountExternalGame('19-Ping-Pong-Game'), theme: 4, song: 'Midnight Grind.mp3', multiplayer: true },
   { id: 'tetris-ext', name: 'Tetris Retro', short: 'Original block stacker.', emoji: '🟦', mount: mountExternalGame('20-Tetris-Game'), theme: 0, song: 'Tropical Bass Land 2.mp3' },
   { id: 'tilting-maze', name: 'Tilting Maze', short: 'Roll the ball to the exit.', emoji: '🌀', mount: mountExternalGame('21-Tilting-Maze-Game'), theme: 1, song: 'audioknap-dubstep-edm-420040.mp3' },
   { id: 'memory-ext', name: 'Memory Pro', short: 'Card flipping match.', emoji: '🧠', mount: mountExternalGame('22-Memory-Card-Game'), theme: 2, song: 'Wi‑Fi Fridge.mp3' },
   { id: 'number-guess', name: 'Number Guess', short: 'Guess the hidden number.', emoji: '❓', mount: mountExternalGame('23-Type-Number-Guessing-Game'), theme: 3, song: 'alec_koff-carnaval-484622.mp3' },
   { id: 'snake-ext', name: 'Snake Retro', short: 'Classic pixel snake.', emoji: '🐍', mount: mountExternalGame('24-Snake-Game'), theme: 4, song: 'alexzavesa-dance-playful-night-510786.mp3' },
-  { id: 'connect-four', name: 'Connect Four', short: 'Get four in a row.', emoji: '🔴', mount: mountExternalGame('25-Connect-Four-Game'), theme: 0, song: 'betty boom boom.mp3' },
+  { id: 'connect-four', name: 'Connect Four', short: 'Get four in a row.', emoji: '🔴', mount: mountExternalGame('25-Connect-Four-Game'), theme: 0, song: 'betty boom boom.mp3', multiplayer: true },
   { id: 'insect-catch', name: 'Insect Catch', short: 'Catch them all.', emoji: '🦟', mount: mountExternalGame('26-Insect-Catch-Game'), theme: 1, song: 'energysound-powerful-percussion-513717.mp3' },
   { id: 'typing-hero', name: 'Typing Hero', short: 'Defeat words with speed.', emoji: '⌨️', mount: mountExternalGame('27-Typing-Game'), theme: 2, song: 'energysound-stomp-action-music-513718.mp3' },
   { id: 'dice-roll', name: 'Dice Roll', short: 'Simulator for board games.', emoji: '🎲', mount: mountExternalGame('28-Dice-Roll-Simulator'), theme: 3, song: 'ikoliks_aj-spring-easter-day-music-320427.mp3' },
@@ -178,6 +186,14 @@ export const GAMES = [
   { id: 'sliding-puzzle', name: 'Sliding Puzzle', short: 'Rearrange the tiles.', emoji: '🧩', mount: mountExternalGame('37-Sliding-Puzzle-Game'), theme: 2, song: 'alexzavesa-dance-playful-night-510786.mp3' },
   { id: 'hextris', name: 'Hextris', short: 'Hexagonal block puzzle.', emoji: '🛑', mount: mountExternalGame('hextris-gh-pages/hextris-gh-pages'), theme: 1, song: 'ikoliks_aj-spring-easter-day-music-320427.mp3' },
   { id: 'aviator', name: 'The Aviator', short: 'Cinematic flight simulator.', emoji: '🛩️', mount: mountExternalGame('TheAviator-master'), theme: 3, song: 'paulyudin-epic-dubstep-dramatic-shadow-rising-475329.mp3' },
+  { id: 'balloon-pop', name: 'Balloon Pop', short: 'Click balloons before they escape.', emoji: '🎈', mount: mountExternalGame('38-Balloon-Pop'), theme: 4, song: 'betty boom boom.mp3' },
+  { id: 'color-flash', name: 'Color Flash', short: 'Simon Says memory challenge.', emoji: '🎨', mount: mountExternalGame('39-Color-Flash'), theme: 0, song: 'alec_koff-carnaval-484622.mp3' },
+  { id: 'math-blitz', name: 'Math Blitz', short: 'Rapid-fire mental math.', emoji: '🔢', mount: mountExternalGame('40-Math-Blitz'), theme: 1, song: 'energysound-stomp-action-music-513718.mp3' },
+  { id: 'asteroid-dash', name: 'Asteroid Dash', short: 'Dodge falling rocks in space.', emoji: '☄️', mount: mountExternalGame('41-Asteroid-Dash'), theme: 2, song: 'paulyudin-epic-dubstep-dramatic-shadow-rising-475329.mp3' },
+  { id: 'bubble-pop', name: 'Bubble Pop', short: 'Match & pop colored bubbles.', emoji: '🫧', mount: mountExternalGame('42-Bubble-Pop'), theme: 3, song: 'alexzavesa-dance-playful-night-510786.mp3' },
+  { id: 'reaction-test', name: 'Reaction Test', short: 'Click when it turns green.', emoji: '⚡', mount: mountExternalGame('43-Reaction-Test'), theme: 4, song: 'lightbeatsmusic-joyful-rhythm-walk-funk-513936.mp3' },
+  { id: 'word-scramble', name: 'Word Scramble', short: 'Unscramble the word fast.', emoji: '🔤', mount: mountExternalGame('44-Word-Scramble'), theme: 0, song: 'kontraa-water-afro-pop-music-445661.mp3' },
+  { id: 'tap-tiles', name: 'Tap Tiles', short: 'Hit the glowing tile in time.', emoji: '🟧', mount: mountExternalGame('45-Tap-Tiles'), theme: 1, song: 'magpiemusic-action-trailer-promo-rock-513687.mp3' },
 ];
 
 export function findGame(id) { return GAMES.find(g => g.id === id); }

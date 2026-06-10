@@ -36,13 +36,17 @@
   ],
   "vars": {
     "SITE_NAME": "Nexa Arcade",
-    "SITE_URL": "https://getnexa.space"
+    "SITE_URL": "https://getnexa.space",
+    "GOOGLE_CLIENT_ID": ""
   },
   "routes": [
     { "pattern": "getnexa.space", "custom_domain": true },
     { "pattern": "www.getnexa.space", "custom_domain": true }
   ],
+  "ai": {
+    "binding": "AI"
+  },
   "triggers": {
-    "crons": ["0 * * * *"]
+    "crons": ["0 * * * *", "0 */8 * * *"]
   }
 }

@@ -1,0 +1,147 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Balloon Pop</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#07080f;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:'Orbitron',monospace;color:#fff;overflow:hidden}
+canvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair}
+#hud{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:20px;background:rgba(0,0,0,.65);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:10px 24px;z-index:10;font-size:14px;font-weight:700;letter-spacing:.1em}
+#hud .label{color:rgba(255,255,255,.45);font-size:10px;text-transform:uppercase;letter-spacing:.12em}
+#hud .val{color:#00e5ff}
+#ui{position:absolute;z-index:10;text-align:center}
+#ui h1{font-size:clamp(24px,6vw,40px);font-weight:900;letter-spacing:.08em;margin-bottom:10px;background:linear-gradient(135deg,#fff,#00e5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#ui p{font-size:14px;color:rgba(255,255,255,.5);margin-bottom:28px}
+#start-btn{background:#00e5ff;color:#000;border:none;padding:14px 40px;border-radius:100px;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:all .2s}
+#start-btn:hover{background:#fff;transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,229,255,.4)}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+</head><body>
+<canvas id="c"></canvas>
+<div id="hud" style="display:none">
+  <div><div class="label">Score</div><div class="val" id="sc">0</div></div>
+  <div><div class="label">Lives</div><div class="val" id="lv">❤️❤️❤️</div></div>
+  <div><div class="label">Level</div><div class="val" id="lvl">1</div></div>
+</div>
+<div id="ui">
+  <h1>BALLOON POP</h1>
+  <p>Click balloons before they escape!<br>Don't let them float away.</p>
+  <button id="start-btn">LAUNCH GAME</button>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud'),ui=document.getElementById('ui');
+const scEl=document.getElementById('sc'),lvEl=document.getElementById('lv'),lvlEl=document.getElementById('lvl');
+const COLORS=['#ff4d6d','#ff9f43','#ffd32a','#0be881','#4dcfff','#cd84ff','#ff5cd0'];
+let W,H,balloons=[],score=0,lives=3,level=1,running=false,animId,missed=0,nextLevel=10;
+
+function resize(){W=canvas.width=canvas.offsetWidth;H=canvas.height=canvas.offsetHeight}
+window.addEventListener('resize',resize);resize();
+
+class Balloon{
+  constructor(){
+    this.r=28+Math.random()*22;
+    this.x=this.r+Math.random()*(W-this.r*2);
+    this.y=H+this.r;
+    this.speed=(0.6+Math.random()*1.2)*(1+level*0.12);
+    this.color=COLORS[Math.floor(Math.random()*COLORS.length)];
+    this.wobble=Math.random()*Math.PI*2;
+    this.wobbleSpeed=0.03+Math.random()*0.02;
+    this.popped=false;this.popAlpha=1;this.popR=this.r;
+    this.pts=Math.ceil(this.r<35?3:this.r<45?2:1);
+  }
+  update(){
+    if(this.popped){this.popAlpha-=0.06;this.popR+=3;return}
+    this.wobble+=this.wobbleSpeed;
+    this.x+=Math.sin(this.wobble)*0.6;
+    this.y-=this.speed;
+  }
+  draw(){
+    if(this.popped){
+      ctx.save();ctx.globalAlpha=this.popAlpha;
+      ctx.strokeStyle=this.color;ctx.lineWidth=2;
+      for(let i=0;i<6;i++){const a=i/6*Math.PI*2;ctx.beginPath();ctx.moveTo(this.x,this.y);ctx.lineTo(this.x+Math.cos(a)*this.popR,this.y+Math.sin(a)*this.popR);ctx.stroke();}
+      ctx.restore();return;
+    }
+    // balloon body
+    ctx.save();
+    const g=ctx.createRadialGradient(this.x-this.r*.3,this.y-this.r*.3,1,this.x,this.y,this.r);
+    g.addColorStop(0,'rgba(255,255,255,.7)');g.addColorStop(0.3,this.color);g.addColorStop(1,this.color+'88');
+    ctx.beginPath();ctx.ellipse(this.x,this.y,this.r,this.r*1.2,0,0,Math.PI*2);
+    ctx.fillStyle=g;ctx.fill();
+    // knot
+    ctx.beginPath();ctx.moveTo(this.x,this.y+this.r*1.2);
+    ctx.quadraticCurveTo(this.x+4,this.y+this.r*1.4,this.x,this.y+this.r*1.5);
+    ctx.strokeStyle=this.color;ctx.lineWidth=2;ctx.stroke();
+    // string
+    ctx.beginPath();ctx.moveTo(this.x,this.y+this.r*1.5);
+    ctx.quadraticCurveTo(this.x+Math.sin(this.wobble*2)*8,this.y+this.r*2.5,this.x+Math.sin(this.wobble)*4,this.y+this.r*3.2);
+    ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.stroke();
+    // shine
+    ctx.beginPath();ctx.ellipse(this.x-this.r*.28,this.y-this.r*.32,this.r*.18,this.r*.28,-0.5,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,.55)';ctx.fill();
+    // score hint
+    ctx.font=`bold ${10}px Orbitron,monospace`;ctx.fillStyle='rgba(255,255,255,.75)';ctx.textAlign='center';
+    ctx.fillText('+'+this.pts,this.x,this.y+4);
+    ctx.restore();
+  }
+  hit(mx,my){return Math.hypot(mx-this.x,my-this.y)<this.r*1.2}
+}
+
+function spawnRate(){return Math.max(0.012,0.022-level*0.0015)}
+
+function gameOver(){
+  running=false;cancelAnimationFrame(animId);
+  ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#fff';ctx.font='bold 36px Orbitron,monospace';ctx.textAlign='center';
+  ctx.fillText('GAME OVER',W/2,H/2-40);
+  ctx.font='18px Orbitron,monospace';ctx.fillStyle='#00e5ff';
+  ctx.fillText('Score: '+score,W/2,H/2+10);
+  ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='13px Orbitron,monospace';
+  ctx.fillText('Tap to play again',W/2,H/2+50);
+  hud.style.display='none';
+  if(window.parent!==window)window.parent.postMessage({type:'score',game:'balloon-pop',score},'*');
+  canvas.onclick=startGame;
+}
+
+function loop(){
+  animId=requestAnimationFrame(loop);
+  ctx.clearRect(0,0,W,H);
+  if(Math.random()<spawnRate())balloons.push(new Balloon());
+  for(let i=balloons.length-1;i>=0;i--){
+    const b=balloons[i];b.update();b.draw();
+    if(b.popped&&b.popAlpha<=0){balloons.splice(i,1);continue}
+    if(!b.popped&&b.y+b.r<0){
+      balloons.splice(i,1);lives--;missed++;
+      lvEl.textContent='❤️'.repeat(Math.max(0,lives));
+      if(lives<=0){gameOver();return}
+    }
+  }
+  if(score>=nextLevel){level++;nextLevel+=10+level*5;lvlEl.textContent=level;}
+  scEl.textContent=score;
+}
+
+function pop(mx,my){
+  for(let i=balloons.length-1;i>=0;i--){
+    if(!balloons[i].popped&&balloons[i].hit(mx,my)){
+      score+=balloons[i].pts;balloons[i].popped=true;return;
+    }
+  }
+}
+
+function startGame(){
+  score=0;lives=3;level=1;nextLevel=10;balloons=[];missed=0;running=true;
+  scEl.textContent='0';lvEl.textContent='❤️❤️❤️';lvlEl.textContent='1';
+  ui.style.display='none';hud.style.display='flex';
+  canvas.onclick=e=>{
+    const r=canvas.getBoundingClientRect();
+    pop((e.clientX-r.left)*(W/r.width),(e.clientY-r.top)*(H/r.height));
+  };
+  canvas.ontouchstart=e=>{
+    e.preventDefault();
+    const r=canvas.getBoundingClientRect(),t=e.touches[0];
+    pop((t.clientX-r.left)*(W/r.width),(t.clientY-r.top)*(H/r.height));
+  };
+  loop();
+}
+document.getElementById('start-btn').onclick=startGame;
+</script>
+</body></html>

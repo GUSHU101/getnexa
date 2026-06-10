@@ -1,5 +1,7 @@
 import { mountBackground, setRoute as setBgRoute } from './bg-3d.js';
 import { sfx, attachSfx } from './sfx.js';
+import { trackPageView } from './firebase.js';
+import { AD_CLIENT, AD_SLOTS, PAID_TIERS } from './ads.js';
 
 export const state = {
   user: null,
@@ -124,6 +126,7 @@ export function render(routes) {
   app.appendChild(buildFooter());
   initScrollAnimations();
   wireLinks(app);
+  trackPageView(url.pathname);
 }
 
 function initScrollAnimations() {
@@ -181,6 +184,7 @@ function buildHeader(currentPath) {
     h('a', { href: '/arena', 'data-link': true }, 'Arena'),
     h('a', { href: '/tournaments', 'data-link': true }, 'Tournaments'),
     h('a', { href: '/leaderboards', 'data-link': true }, 'Legends'),
+    h('a', { href: '/blog', 'data-link': true }, 'Blog'),
     h('a', { href: '/creators', 'data-link': true }, 'Studio'),
     h('a', { href: '/shop', 'data-link': true }, 'Shop'),
     user
@@ -206,6 +210,7 @@ function buildHeader(currentPath) {
     ['/arena', 'Arena', '/arena'],
     ['/tournaments', 'Tournaments', '/tournaments'],
     ['/leaderboards', 'Legends', '/leaderboards'],
+    ['/blog', 'Blog', '/blog'],
     ['/creators', 'Studio', '/creators'],
   ];
   return h('header', { class: 'site-header' },
@@ -242,6 +247,7 @@ function buildFooter() {
             h('li', {}, h('a', { href: '/arena', 'data-link': true }, 'Live Arena')),
             h('li', {}, h('a', { href: '/tournaments', 'data-link': true }, 'Tournaments')),
             h('li', {}, h('a', { href: '/leaderboards', 'data-link': true }, 'Leaderboards')),
+            h('li', {}, h('a', { href: '/blog', 'data-link': true }, 'Gaming Blog')),
             h('li', {}, h('a', { href: '/governance', 'data-link': true }, 'Vote on Games'))
           )
         ),
@@ -305,24 +311,26 @@ export function toast(message, type = '') {
   setTimeout(() => t.remove(), 3500);
 }
 
-export function AdSlot(size = '728x90', label = 'Advertisement', slotId = '') {
-  if (state.user && ['operative', 'pro', 'legend', 'studio'].includes(state.user.tier)) {
-    return h('div', { class: 'ad-slot-hidden' });
-  }
-  const wrap = h('div', { class: 'ad-slot', 'aria-label': label });
-  if (slotId) {
-    const ins = document.createElement('ins');
-    ins.className = 'adsbygoogle'; ins.style.display = 'block'; ins.style.width = '100%';
-    ins.setAttribute('data-ad-client', 'ca-pub-5800977493749262');
-    ins.setAttribute('data-ad-slot', slotId);
-    ins.setAttribute('data-ad-format', 'auto');
-    ins.setAttribute('data-full-width-responsive', 'true');
-    wrap.appendChild(ins);
-    queueMicrotask(() => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {} });
-  } else {
-    wrap.appendChild(h('small', { style: 'font-size:10px;color:var(--text-muted);' }, label));
-  }
-  return wrap;
+/**
+ * Render a real, responsive AdSense display unit.
+ * @param {string} slot  A key from AD_SLOTS ('inContent'|'inArticle'|'sidebar')
+ *                       or a raw numeric data-ad-slot id.
+ * Returns null when the viewer is a subscriber or no slot id is configured —
+ * so there are never empty "Advertisement" placeholder boxes. Sitewide
+ * Auto Ads still earn regardless of these manual units.
+ */
+export function AdSlot(slot = 'inContent', label = 'Advertisement') {
+  if (state.user && PAID_TIERS.includes(state.user.tier)) return null;
+  const slotId = AD_SLOTS[slot] || (/^\d{6,}$/.test(slot) ? slot : '');
+  if (!slotId) return null;
+  const ins = document.createElement('ins');
+  ins.className = 'adsbygoogle'; ins.style.display = 'block';
+  ins.setAttribute('data-ad-client', AD_CLIENT);
+  ins.setAttribute('data-ad-slot', slotId);
+  ins.setAttribute('data-ad-format', 'auto');
+  ins.setAttribute('data-full-width-responsive', 'true');
+  queueMicrotask(() => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {} });
+  return h('div', { class: 'ad-zone', 'aria-label': label }, ins);
 }
 
 export async function api(path, opts = {}) {

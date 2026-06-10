@@ -7,3 +7,7 @@ dist/
 .DS_Store
 *.log
 .vscode/
+
+# Local-only R2 media mirror (served from CDN, not the worker bundle)
+public/shared-media
+public/shared-media/
