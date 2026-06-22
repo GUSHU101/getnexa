@@ -23,7 +23,7 @@
     {
       "binding": "DB",
       "database_name": "getnexa-db",
-      "database_id": "be349dcb-97da-4327-8361-63a55a7c8305"
+      "database_id": "b7845773-0a43-46b5-9b1c-6b7b01e189ff"
     }
   ],
   "durable_objects": {
@@ -34,11 +34,6 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["GameRoom"] }
   ],
-  "vars": {
-    "SITE_NAME": "Nexa Arcade",
-    "SITE_URL": "https://getnexa.space",
-    "GOOGLE_CLIENT_ID": "799924012041-15h98skfoftgphn9j0ug60dhdgpqjd35.apps.googleusercontent.com"
-  },
   "routes": [
     { "pattern": "getnexa.space", "custom_domain": true },
     { "pattern": "www.getnexa.space", "custom_domain": true }
